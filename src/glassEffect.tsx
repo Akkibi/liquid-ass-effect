@@ -112,7 +112,9 @@ const GlassEffect = ({
     return (
         <>
             <div {...props} ref={containerRef}>
-                {children}
+              <div className="glass-effect-content">
+              {children}
+              </div>
                 <canvas ref={canvasRefUV}></canvas>
             </div>
         </>

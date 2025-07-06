@@ -291,12 +291,10 @@ export class Webgl2GlassEffect {
               // blur image here to make it look more like a glass
               if (blurredDepth > 0.0) {
                   finalColor = gaussianBlurColor(u_background, backgroundUVDistorted, 0.5);
-                  finalColor = mix(finalColor, max(vec4(1.0 - (blurredDepth * 2.0 - 0.2)) + 0.1, 0.0), 0.1);
                   finalColor += addLuminance(finalColor, 0.1 - (finalColor.r + finalColor.g + finalColor.b) * 0.2); // add a soft glow effect
-                  // finalColor = vec4(1.0 - (blurredDepth * 2.0 - 0.2));
-                  // finalColor.a = 1.0;
+                  float mask = pow(2.0 - (blurredDepth * 1.0 - 0.0), 6.2) - 10.0;
+                  finalColor = mix(finalColor, vec4(max(mask, 0.0)), 0.1);
               }
-
 
 
               fragColor = finalColor;
