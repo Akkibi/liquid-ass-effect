@@ -7,7 +7,7 @@ import CanvasAnimation from "./effect/canvasAnimation";
 // import { WebglTest } from "./effect/webglTest";
 // import { Glass } from "./effect/glass";
 function App() {
-    const [currentImage, setCurrentImage] = useState<string>("./akira.png");
+    const [currentImage, setCurrentImage] = useState<string>("./number2x.png");
     const uiCanvas = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
         const background = new Background();
@@ -39,8 +39,8 @@ function App() {
             <div className="canvasContainer">
                 <canvas ref={uiCanvas}></canvas>
             </div>
-            <GlassEffect id="hello" image={currentImage} className="webgl uv">
-                <p>Hello World</p>
+            <GlassEffect id="hello" effectForce={1.5} image={currentImage} className="webgl uv">
+                {/* <p>Hello World</p> */}
             </GlassEffect>
             {/* dropDown */}
             <select

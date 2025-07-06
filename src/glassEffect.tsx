@@ -20,12 +20,14 @@ const GlassEffect = ({
     image,
     imageData,
     children,
+    effectForce,
     ...props
 }: {
     imageData?: ImageData;
     image?: string;
     children: React.ReactNode;
     className: string;
+    effectForce: number;
     id: string;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -42,18 +44,17 @@ const GlassEffect = ({
             img.src = image;
             img.onload = () => {
                 const imageData = htmlImageToImageData(img);
-                if (!imageData) return;
-                // glassRefUV.current = new WebglTest(imageData, canvasUv);
+                if (!imageData || containerRef.current == null) return;
                 glassRefUV.current = new Webgl2GlassEffect(imageData, canvasUv);
-                glassRefUV.current.setMargin(1);
-                glassRefUV.current.setMarginWidth(5);
-                // glassRef.current = new Shape(id, canvas, container);
-                // glassRef.current.updateUv(glassRefUV.current.getImageData());
+                glassRefUV.current.setMargin(0.1);
+                glassRefUV.current.setBlurAmount(effectForce);
+                containerRef.current.style.width = img.width.toString() + "px";
+                containerRef.current.style.height = img.height.toString() + "px";
             };
         } else if (imageData) {
             glassRefUV.current = new Webgl2GlassEffect(imageData, canvasUv);
             glassRefUV.current.setMargin(1);
-            glassRefUV.current.setMarginWidth(1.2);
+            glassRefUV.current.setBlurAmount(effectForce);
         }
 
         const mouseMoveHandler = (e: MouseEvent) => {
@@ -81,18 +82,22 @@ const GlassEffect = ({
                 const imageData = htmlImageToImageData(img);
                 if (glassRefUV.current == null) return;
                 if (!imageData) return;
-                glassRefUV.current.updateImage(imageData);
                 if (containerRef.current == null) return;
+                glassRefUV.current.updateImage(imageData);
                 containerRef.current.style.width = img.width.toString() + "px";
                 containerRef.current.style.height = img.height.toString() + "px";
+                console.log(imageData.width.toString() + "px");
             };
         }
     }, [image]);
 
     useEffect(() => {
         const handleUpdate = (imageData: ImageData) => {
-            if (glassRefUV.current == null) return;
+            if (containerRef.current == null || glassRefUV.current == null) return;
             glassRefUV.current.updateImage(imageData);
+            containerRef.current.style.width = imageData.width.toString() + "px";
+            containerRef.current.style.height = imageData.height.toString() + "px";
+            console.log(imageData.width.toString() + "px");
         };
         eventEmitter.on("update", handleUpdate);
         return () => {
@@ -102,19 +107,18 @@ const GlassEffect = ({
 
     useEffect(() => {
         if (glassRefUV.current == null || !imageData) return;
+        if (containerRef.current == null) return;
         glassRefUV.current.render();
         glassRefUV.current.updateImage(imageData);
-        if (containerRef.current == null) return;
         containerRef.current.style.width = imageData.width.toString() + "px";
         containerRef.current.style.height = imageData.height.toString() + "px";
+        console.log(imageData.width.toString() + "px");
     }, [imageData]);
 
     return (
         <>
             <div {...props} ref={containerRef}>
-              <div className="glass-effect-content">
-              {children}
-              </div>
+                <div className="glass-effect-content">{children}</div>
                 <canvas ref={canvasRefUV}></canvas>
             </div>
         </>

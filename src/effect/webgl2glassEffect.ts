@@ -6,7 +6,7 @@ export class Webgl2GlassEffect {
     private program: WebGLProgram | null = null;
     private texture: WebGLTexture | null = null;
     private marginLocation: WebGLUniformLocation | null = null;
-    private marginWidth: WebGLUniformLocation | null = null;
+    private blurRadius: WebGLUniformLocation | null = null;
     private maskLocation: WebGLUniformLocation | null = null;
     private background: WebGLUniformLocation | null = null;
     private canvasSizeLocation: WebGLUniformLocation | null = null;
@@ -80,7 +80,7 @@ export class Webgl2GlassEffect {
           uniform sampler2D u_background;
 
           uniform float u_margin;
-          uniform float u_marginWidth;
+          uniform float u_blurRadius;
           uniform vec2 u_canvasSize;
           uniform vec2 u_backgroundSize;
           uniform vec2 u_position;
@@ -239,11 +239,10 @@ export class Webgl2GlassEffect {
 
           void main() {
               float margin = u_margin;
-              float radius = u_marginWidth;
+              float blurAmount = u_blurRadius;
 
               vec2 flipped_uv = vec2(v_uv.x, 1.0 - v_uv.y);
 
-              float blurAmount = 1.5;
               float blurredDepth = gaussianBlur(u_mask, flipped_uv, blurAmount);
               // clip ouside the initial shape
               if (blurredDepth < 0.5) {
@@ -298,12 +297,14 @@ export class Webgl2GlassEffect {
                   // add inverse color of luminance to final color
                   float luminanceValue =  0.1 - (finalColor.r + finalColor.g + finalColor.b) * 0.05;
                   finalColor = addLuminance(finalColor, 0.025);
-                  finalColor = mix(finalColor, vec4(1.0), clamp((luminanceValue) * border, 0.0, 1.0));
-                  //// float mask = pow(2.0 - (blurredDepth * 1.0 - 0.0), 6.2) - 10.0;
-                  //// finalColor = mix(finalColor, vec4(clamp(mask, 0.0, 1.0)), 0.1 * border);
+                  finalColor = mix(finalColor, vec4(1.0), clamp((luminanceValue + 0.1) * border, 0.0, 1.0));
+
+                  // add ring color around
                   float ring = border - border * border;
+                  // get bumpColor for light ring effect
                   ring = bumpColor.r * bumpColor.g * 5.0 * ring;
                   finalColor = mix(finalColor, vec4(1.0), ring);
+
                   // finalColor = vec4(vec3(bumpColor.r * bumpColor.g * 5.0 * ring), 1.0);
               }
 
@@ -335,7 +336,7 @@ export class Webgl2GlassEffect {
         this.marginLocation = gl.getUniformLocation(this.program, "u_margin");
         this.background = gl.getUniformLocation(this.program, "u_background");
         this.maskLocation = gl.getUniformLocation(this.program, "u_mask");
-        this.marginWidth = gl.getUniformLocation(this.program, "u_marginWidth");
+        this.blurRadius = gl.getUniformLocation(this.program, "u_blurRadius");
         this.canvasSizeLocation = gl.getUniformLocation(this.program, "u_canvasSize");
         this.backgroundSizeLocation = gl.getUniformLocation(this.program, "u_backgroundSize");
         this.positionLocation = gl.getUniformLocation(this.program, "u_position");
@@ -414,10 +415,10 @@ export class Webgl2GlassEffect {
         }
     }
 
-    public setMarginWidth(value: number) {
-        if (this.marginWidth) {
+    public setBlurAmount(value: number) {
+        if (this.blurRadius) {
             this.gl.useProgram(this.program);
-            this.gl.uniform1f(this.marginWidth, value);
+            this.gl.uniform1f(this.blurRadius, value);
         }
     }
 
