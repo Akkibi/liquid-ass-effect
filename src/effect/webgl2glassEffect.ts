@@ -250,50 +250,61 @@ export class Webgl2GlassEffect {
                     blurredDepth= 0.0;
               }
 
-              vec2 texelSize = 1.0 / u_canvasSize;
-              float depthC = blurredDepth;
-              float depthL = gaussianBlur(u_mask, flipped_uv + vec2(-texelSize.x, 0.0), blurAmount);
-              float depthR = gaussianBlur(u_mask, flipped_uv + vec2(texelSize.x, 0.0), blurAmount);
-              float depthU = gaussianBlur(u_mask, flipped_uv + vec2(0.0, texelSize.y), blurAmount);
-              float depthD = gaussianBlur(u_mask, flipped_uv + vec2(0.0, -texelSize.y), blurAmount);
-
-              float dx = depthR - depthL;
-              float dy = depthU - depthD;
-
-              float strength = 1.0; // Bump strength
-              vec3 normal = normalize(vec3(-dx * strength, -dy * strength, 1.0));
-              vec3 bumpColor = normal * 10.0;
-
-              // vec4 edgeColor = vec4(0.5 + 0.5 * normGrad.x, 0.5 + 0.5 * normGrad.y, s, 1.0);
-              // vec4 fillColor = vec4(0.5, 0.5, 0.0, 1.0);
-              // vec4 distortionColor = dist > margin ? fillColor : edgeColor;
+              float border = clamp((blurredDepth - 0.5) * 15.0, 0.0, 1.0);
 
               // Calculate background texture UV based on actual sizes
               vec2 pixelCoords = v_uv *  u_canvasSize / u_backgroundSize;
               vec2 backgroundUV = pixelCoords + vec2(u_position.x / u_backgroundSize.x, 1.0 - (u_position.y / u_backgroundSize.y) - (u_canvasSize.y / u_backgroundSize.y));
 
-              // vec2 backgroundUVDistorted = backgroundUV + vec2((pow(distortionColor.r , 2.0) / 10.0, pow(distortionColor.g, 2.0) / 10.0) * 10.0) * vec2(1.0, -1.0);
-              vec2 backgroundUVDistorted = backgroundUV + vec2(pow(bumpColor.r , 1.0) / 10.0, pow(bumpColor.g, 1.0) / 10.0) * vec2(-1.0, 1.0) * vec2(1.0 - blurredDepth) * 2.0;
+              vec4 backgroundColor = vec4(0.0);
+              vec2 backgroundUVDistorted = backgroundUV;
+              vec3 bumpColor = vec3(0.0);
 
-              if (blurredDepth <= 0.0) {
-                  backgroundUVDistorted = backgroundUV;
+              if (border > 0.0 && blurredDepth < 1.0) {
+                  // get depth abound current pixel to determine its Normal vector
+                  vec2 texelSize = 1.0 / u_canvasSize;
+                  float depthC = blurredDepth;
+                  float depthL = gaussianBlur(u_mask, flipped_uv + vec2(-texelSize.x, 0.0), blurAmount);
+                  float depthR = gaussianBlur(u_mask, flipped_uv + vec2(texelSize.x, 0.0), blurAmount);
+                  float depthU = gaussianBlur(u_mask, flipped_uv + vec2(0.0, texelSize.y), blurAmount);
+                  float depthD = gaussianBlur(u_mask, flipped_uv + vec2(0.0, -texelSize.y), blurAmount);
+
+                  float dx = depthR - depthL;
+                  float dy = depthU - depthD;
+
+                  float strength = 1.0; // Bump strength
+                  vec3 normal = normalize(vec3(-dx * strength, -dy * strength, 1.0));
+                  bumpColor = normal * 10.0;
+
+                  // calculate the distortion based on the normal vector
+                  backgroundUVDistorted += (vec2(pow(bumpColor.r , 1.0) / 10.0, pow(bumpColor.g, 1.0) / 10.0) * vec2(-1.0, 1.0) * vec2(1.0 - blurredDepth) * 2.0) * border;
               }
 
-              // vec4 finalColor = vec4(0.0, 0.0, 1.0, 1.0);
-              // finalColor.xy = backgroundUVDistorted;
+              // uv to color smoothing the borders using border variable
+              if (border > 0.0) {
+                vec4 backgroundColor1 = gaussianBlurColor(u_background, backgroundUVDistorted, 0.5);
+                vec4 backgroundColor2 = texture(u_background, backgroundUV);
 
-              // Sample background with corrected UV
-              // vec4 finalColor = backgroundColor;
+                backgroundColor = mix(backgroundColor2, backgroundColor1, border);
+              } else {
+                backgroundColor = texture(u_background, backgroundUV);
+              }
 
-              vec4 backgroundColor = texture(u_background, backgroundUVDistorted);
               vec4 finalColor = backgroundColor;
 
-              // blur image here to make it look more like a glass
-              if (blurredDepth > 0.0) {
-                  finalColor = gaussianBlurColor(u_background, backgroundUVDistorted, 0.5);
-                  finalColor += addLuminance(finalColor, 0.1 - (finalColor.r + finalColor.g + finalColor.b) * 0.2); // add a soft glow effect
-                  float mask = pow(2.0 - (blurredDepth * 1.0 - 0.0), 6.2) - 10.0;
-                  finalColor = mix(finalColor, vec4(max(mask, 0.0)), 0.1);
+
+              // compositing : lighten and add borders light
+              if (border > 0.0) {
+                  // add inverse color of luminance to final color
+                  float luminanceValue =  0.1 - (finalColor.r + finalColor.g + finalColor.b) * 0.05;
+                  finalColor = addLuminance(finalColor, 0.025);
+                  finalColor = mix(finalColor, vec4(1.0), clamp((luminanceValue) * border, 0.0, 1.0));
+                  //// float mask = pow(2.0 - (blurredDepth * 1.0 - 0.0), 6.2) - 10.0;
+                  //// finalColor = mix(finalColor, vec4(clamp(mask, 0.0, 1.0)), 0.1 * border);
+                  float ring = border - border * border;
+                  ring = bumpColor.r * bumpColor.g * 5.0 * ring;
+                  finalColor = mix(finalColor, vec4(1.0), ring);
+                  // finalColor = vec4(vec3(bumpColor.r * bumpColor.g * 5.0 * ring), 1.0);
               }
 
 

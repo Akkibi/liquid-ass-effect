@@ -83,8 +83,8 @@ export class Shape {
     }
     private mouseMove(x: number, y: number) {
         // this.drawUv();
-        this.effectPosition.x = x - this.canvas.getBoundingClientRect().width / 2;
-        this.effectPosition.y = y - this.canvas.getBoundingClientRect().height / 2;
+        this.effectPosition.x = Math.round(x) - this.canvas.getBoundingClientRect().width / 2;
+        this.effectPosition.y = Math.round(y) - this.canvas.getBoundingClientRect().height / 2;
         this.container.style.left = `${this.effectPosition.x}px`;
         this.container.style.top = `${this.effectPosition.y}px`;
         // this.drawEffect();
