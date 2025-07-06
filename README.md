@@ -1,3 +1,19 @@
+# Recreation of liquid glass effect using Webgl2.0
+The effect can be animated by changing the input image url of the component or by changing the input ImageData 
+## Preview of the effect with text image 
+![image](https://github.com/Akkibi/liquid-ass-effect/blob/master/public/thumbnail3.png)
+![image](https://github.com/Akkibi/liquid-ass-effect/blob/master/public/thumbnail2.png)
+
+Input image :
+![image](https://github.com/Akkibi/liquid-ass-effect/blob/master/public/number.png)
+
+## Preview of the effect using a canvas context as input for ImageData
+![image](https://github.com/Akkibi/liquid-ass-effect/blob/master/public/thumbnail.png)
+
+## Preview of the effect animated using the same canvas animation 
+![video](https://github.com/Akkibi/liquid-ass-effect/blob/master/public/in%20movement.mp4)
+
+## Usual :
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
