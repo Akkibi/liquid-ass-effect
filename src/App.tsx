@@ -40,7 +40,7 @@ function App() {
                 <canvas ref={uiCanvas}></canvas>
             </div>
             <GlassEffect id="hello" effectForce={1.5} image={currentImage} className="webgl uv">
-                {/* <p>Hello World</p> */}
+                <p>{/* put content here if it's a UI element */}</p>
             </GlassEffect>
             {/* dropDown */}
             <select
